@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alyssa J. Kang</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@1,400..800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: 'Poppins', sans-serif;
+  color: #fdfdf7;
+  background: #578c39;
+  overflow: hidden;
+}
+
+/* grass background canvases, fixed behind everything —
+   #grass is the static dense field, #wind holds the swaying blades */
+#grass, #wind {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* flowers layer — blooms left by the cursor live here */
+#flowerLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.flower {
+  position: absolute;
+  transform: translate(-50%, -50%) scale(0);
+  animation:
+    bloom 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+    wilt 0.45s ease-in 0.65s forwards;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25));
+}
+
+@keyframes bloom {
+  to { transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes wilt {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+}
+
+/* scrolling content sits above */
+:root {
+  /* height of the strip the fixed nav sits in; page content scrolls only below it */
+  --nav-h: calc(clamp(1.1rem, 3.5vh, 2rem) * 2 + 1.4rem);
+}
+
+/* each page's backdrop is a fixed layer, so the strip behind the nav
+   always matches the page while content is clipped beneath it */
+#pageBg {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+body[data-page="about"] #pageBg {
+  background:
+    radial-gradient(circle at 50% 10%, rgba(48, 105, 65, 0.28), transparent 48%),
+    linear-gradient(145deg, #173d2a 0%, #102f22 55%, #0d271c 100%);
+}
+body[data-page="projects"] #pageBg { background: rgba(8, 22, 8, 0.72); }
+
+main {
+  position: fixed;
+  z-index: 2;
+  top: var(--nav-h);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  overflow-x: hidden;  /* off-stage fly-in cards must not widen the page */
+}
+
+/* each section is its own page: only the active one is shown */
+main > section:not(.is-active) { display: none !important; }
+main > section.is-active { animation: pageIn 0.35s ease both; }
+@keyframes pageIn { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { main > section.is-active { animation: none; } }
+
+body[data-page="home"] main { top: 0; }
+
+section {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- hero --- */
+.hero h1 {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(3.4rem, 12vw, 9rem);
+  line-height: 1.04;
+  text-align: center;
+}
+
+/* one subtle, consistent shadow under all text and iconography
+   so the white reads against the grass */
+h1, h2, .topnav a {
+  text-shadow: 0 1px 3px rgba(15, 40, 10, 0.45), 0 4px 12px rgba(15, 40, 10, 0.3);
+}
+
+.topnav svg {
+  filter: drop-shadow(0 1px 3px rgba(15, 40, 10, 0.45));
+}
+
+/* --- top-left home mark --- */
+.home-mark {
+  position: fixed;
+  top: clamp(0.8rem, 2.6vh, 1.5rem);
+  left: clamp(1.3rem, 3.5vw, 2.4rem);
+  z-index: 3;
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  color: #fdfdf7;
+  text-decoration: none;
+  text-shadow: 0 1px 3px rgba(15, 40, 10, 0.45), 0 4px 12px rgba(15, 40, 10, 0.3);
+  opacity: 0.92;
+  transition: opacity 0.2s ease;
+}
+
+.home-mark:hover { opacity: 1; }
+
+/* --- top-right nav bar --- */
+.topnav {
+  position: fixed;
+  top: clamp(1.1rem, 3.5vh, 2rem);
+  right: clamp(1.3rem, 3.5vw, 2.4rem);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: clamp(1.1rem, 2.6vw, 2.2rem);
+}
+
+.topnav a {
+  color: #fdfdf7;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: clamp(0.72rem, 1.3vw, 0.92rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.92;
+  transition: opacity 0.2s ease;
+}
+
+.topnav a:hover { opacity: 1; }
+
+.topnav .linkedin { display: flex; }
+
+/* --- scroll hint chevron --- */
+.scroll-hint {
+  position: absolute;
+  bottom: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.85);
+  animation: bob 2.8s ease-in-out infinite;
+  cursor: pointer;
+  background: none;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.scroll-hint svg { filter: drop-shadow(0 1px 3px rgba(15, 40, 10, 0.45)); }
+.scroll-hint svg + svg { margin-top: 1px; }
+
+@keyframes bob {
+  0%, 100% { transform: translate(-50%, 0); opacity: 0.7; }
+  50% { transform: translate(-50%, 5px); opacity: 1; }
+}
+
+/* --- placeholder content sections (about / projects / contact) --- */
+.page-section h2 {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(2rem, 5.5vw, 3.8rem);
+  letter-spacing: 0.04em;
+}
+
+/* --- about: the grass ends at a midnight landfill of memories --- */
+#about {
+  background:
+    radial-gradient(circle at 50% 10%, rgba(48, 105, 65, 0.28), transparent 48%),
+    linear-gradient(145deg, #173d2a 0%, #102f22 55%, #0d271c 100%);
+  justify-content: flex-start;
+  padding-top: clamp(3.5rem, 10vh, 6rem);
+  overflow: hidden;
+}
+
+#about h2 {
+  display: none;
+  position: relative;
+  z-index: 1;
+}
+
+/* --- about: a flashcard photo wall --- */
+#about {
+  min-height: 100vh;
+  height: auto;
+  padding: clamp(3.5rem, 8vh, 6rem) clamp(1rem, 5vw, 5rem);
+  overflow: visible;
+}
+
+.about-wall {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  /* masonry columns: every card takes its photo's real shape, nothing is cropped */
+  column-count: 4;
+  column-gap: clamp(0.55rem, 1.5vw, 1.15rem);
+}
+
+.about-card {
+  position: relative;
+  display: block;
+  width: 100%;
+  margin: 0 0 clamp(0.8rem, 1.8vw, 1.4rem);
+  break-inside: avoid;
+  perspective: 900px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.about-card-inner {
+  position: relative;
+  display: block;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* flip-to-caption is switched off for now: photos are static.
+   the caption backs stay in the markup, just hidden */
+.about-card { cursor: default; }
+.about-card-back { display: none !important; }
+
+.about-card-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border: 7px solid #fffdf6;
+  border-radius: 3px;
+  box-shadow: 0 10px 24px rgba(3, 20, 10, 0.27);
+}
+
+.about-card-front {
+  position: relative;
+  display: block;
+  background: #d8d2c1;
+  transform: rotate(var(--tilt, 0deg));
+}
+
+.about-card-front img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.about-card-back {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(0.8rem, 1.7vw, 1.15rem);
+  background: #fffdf6;
+  color: #234b30;
+  transform: rotateY(180deg);
+}
+
+.about-card-back h3 {
+  margin-bottom: 0.45rem;
+  font-family: 'EB Garamond', serif;
+  font-size: clamp(1.05rem, 1.8vw, 1.45rem);
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.about-card-back p {
+  color: #526354;
+  font-size: clamp(0.62rem, 0.85vw, 0.78rem);
+  line-height: 1.45;
+}
+
+.about-card:nth-child(4n) { --tilt: -1.5deg; }
+.about-card:nth-child(7n) { --tilt: 1.5deg; }
+
+.about-card:focus-visible {
+  outline: 3px solid #f6d77a;
+  outline-offset: 5px;
+}
+
+@media (max-width: 850px) {
+  .about-wall { column-count: 3; }
+}
+
+@media (max-width: 600px) {
+  .about-wall { column-count: 2; column-gap: 0.8rem; }
+}
+
+/* the junk pile covers the whole section */
+.landfill {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+/* each piece is driven every frame by the physics sim: JS writes an inline
+   translate()+rotate() transform, so we start it parked off-screen */
+.junk {
+  position: absolute;
+  top: 0;
+  left: 0;
+  cursor: pointer;
+  transform: translate(-9999px, -9999px);
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.junk svg, .junk img {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.6));
+  /* hover pop lives on the child so it composes with the physics
+     transform the JS keeps writing to .junk itself */
+  transition: transform 0.2s ease;
+}
+
+.junk:hover, .junk:focus-visible { z-index: 10; outline: none; }
+.junk:hover img, .junk:focus-visible img { transform: scale(1.14); }
+
+/* the memory card that floats up beside a hovered piece of junk */
+#memoryCard {
+  position: fixed;
+  z-index: 40;
+  width: 240px;
+  background: #fffdf6;
+  border-radius: 10px;
+  padding: 8px 8px 11px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+#memoryCard.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#memoryCard img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 5px;
+  background: #e9e2cf;
+}
+
+#memoryCard .mc-photo-empty {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 5px;
+  background: #e9e2cf;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7d9469;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#memoryCard .mc-title {
+  margin: 8px 2px 2px;
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 1rem;
+  color: #2f5526;
+}
+
+#memoryCard .mc-text {
+  margin: 0 2px;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  font-weight: 600;   /* pin: keep the memory cards looking as they did */
+  color: #4a4a42;
+}
+
+/* --- work page: a resume-shaped portfolio section --- */
+#projects {
+  min-height: 100vh;
+  height: auto;
+  padding: clamp(5.5rem, 10vh, 7rem) clamp(1rem, 5vw, 5rem) clamp(4rem, 8vh, 6rem);
+  align-items: stretch;
+  justify-content: flex-start;
+  background: rgba(8, 22, 8, 0.72);
+  overflow: hidden;
+}
+
+.work-shell {
+  width: min(1080px, 100%);
+  margin: 0 auto;
+}
+
+.work-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: clamp(1.8rem, 4vw, 3rem);
+}
+
+.work-heading h2 {
+  margin: 0;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.work-heading p {
+  max-width: 360px;
+  margin: 0 0 0.35rem;
+  color: rgba(253, 253, 247, 0.78);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  text-align: right;
+}
+
+.work-group + .work-group { margin-top: clamp(2.2rem, 5vw, 3.8rem); }
+
+.work-group-label {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.9rem;
+  color: #f6d77a;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.work-group-label::after {
+  content: '';
+  height: 1px;
+  flex: 1;
+  background: rgba(246, 215, 122, 0.35);
+}
+
+.work-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 1fr);
+  gap: 1.2rem 2rem;
+  align-items: center;
+  padding: 1.15rem 0;
+  border-top: 1px solid rgba(255,255,255,0.22);
+  transition: background 0.2s ease, padding 0.2s ease;
+}
+
+.work-card:last-child { border-bottom: 1px solid rgba(255,255,255,0.22); }
+.work-card:hover { background: rgba(255,255,255,0.07); padding-inline: 1rem; }
+
+.work-card h3 {
+  margin-bottom: 0.25rem;
+  color: #fffdf6;
+  font-family: 'EB Garamond', serif;
+  font-size: clamp(1.35rem, 2.2vw, 1.75rem);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.work-card .work-meta {
+  color: #b8d58d;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.work-card p {
+  color: rgba(253, 253, 247, 0.8);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.work-link {
+  color: #f6d77a;
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(246, 215, 122, 0.45);
+  transition: border-color 0.2s ease;
+  white-space: nowrap;
+}
+.work-link:hover { border-bottom-color: #f6d77a; }
+
+.work-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.7rem; }
+
+.work-tag {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 999px;
+  color: rgba(253,253,247,0.76);
+  font-size: 0.62rem;
+  white-space: nowrap;
+}
+
+
+/* --- cotera videos: thumbnails that turn into players on click --- */
+.work-videos {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.6rem, 1.6vw, 1.1rem);
+  margin-top: 0.3rem;
+}
+.work-video { display: block; color: inherit; text-decoration: none; }
+.wv-frame {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #0b1a0b;
+  border: 1px solid rgba(255,255,255,0.18);
+}
+.wv-frame img, .wv-frame iframe {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; border: 0; display: block;
+}
+.wv-play {
+  position: absolute; left: 50%; top: 50%;
+  width: 46px; height: 46px; margin: -23px 0 0 -23px;
+  border-radius: 50%;
+  background: rgba(246, 215, 122, 0.92);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  transition: transform 0.2s ease;
+}
+.wv-play::after {
+  content: ""; position: absolute; left: 18px; top: 14px;
+  border-style: solid; border-width: 9px 0 9px 14px;
+  border-color: transparent transparent transparent #1d3a17;
+}
+.work-video:hover .wv-play { transform: scale(1.08); }
+.wv-title {
+  display: block; margin-top: 0.45rem;
+  color: rgba(253,253,247,0.78);
+  font-size: 0.68rem; line-height: 1.4;
+}
+@media (max-width: 700px) {
+  .work-videos { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 700px) {
+  .work-heading { display: block; }
+  .work-heading p { margin-top: 0.6rem; text-align: left; }
+  .work-card { grid-template-columns: 1fr; gap: 0.55rem; }
+  .work-card:hover { padding-inline: 0.5rem; }
+}
+
+/* --- contact: a cream postcard on the grass, the same #fffdf6 stock as
+   the gallery's polaroid frames — note on the left, links on the address side --- */
+main > #contact { padding: clamp(1.5rem, 5vh, 3rem) clamp(1rem, 5vw, 5rem); }
+
+.postcard {
+  position: relative;
+  width: min(780px, 100%);
+  min-height: clamp(440px, 62vh, 540px);
+  margin: auto 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+  gap: clamp(1.4rem, 3.5vw, 2.6rem);
+  padding: clamp(2.4rem, 5vw, 3.2rem) clamp(1.5rem, 4vw, 2.8rem) clamp(1.8rem, 4vw, 2.6rem);
+  background:
+    radial-gradient(circle at 15% 20%, rgba(205, 190, 150, 0.12), transparent 40%),
+    radial-gradient(circle at 85% 90%, rgba(205, 190, 150, 0.14), transparent 45%),
+    #fffdf6;
+  color: #3e4237;
+  border-radius: 4px;
+  box-shadow: 0 22px 55px rgba(3, 20, 10, 0.4), 0 2px 6px rgba(3, 20, 10, 0.2);
+  transform: rotate(-1.2deg);
+}
+
+.pc-header {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #8a8f7d;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
+}
+
+#contact .pc-note h2 {
+  color: #2f5526;
+  text-shadow: none;
+  text-transform: lowercase;
+  letter-spacing: 0;
+  font-size: clamp(2.2rem, 5vw, 3.2rem);
+  line-height: 1;
+}
+
+.pc-message {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: #3e4237;
+}
+.pc-message span { color: #3d6b2f; font-weight: 600; }
+
+.pc-sign {
+  margin-top: 0.9rem;
+  text-align: right;
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 1.25rem;
+  color: #2f5526;
+}
+
+.pc-note { align-self: center; }
+
+.pc-divider { background: rgba(62, 66, 55, 0.25); }
+
+.pc-address {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* stamp: perforated edge via a dotted mask, tilted a touch */
+.pc-stamp {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 76px;
+  height: 90px;
+  padding: 6px;
+  background: #fffdf6;
+  transform: rotate(4deg);
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.18));
+  /* dots punched only along the edge (padding area); the inner content box stays solid */
+  -webkit-mask:
+    radial-gradient(circle 3px, transparent 96%, #000) -4px -4px / 8px 8px,
+    linear-gradient(#000 0 0) content-box;
+          mask:
+    radial-gradient(circle 3px, transparent 96%, #000) -4px -4px / 8px 8px,
+    linear-gradient(#000 0 0) content-box;
+}
+.pc-stamp-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  background: linear-gradient(160deg, #6da344, #3e6b27);
+  color: #fffdf6;
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 1rem;
+}
+
+.pc-postmark {
+  position: absolute;
+  top: 0.9rem;
+  right: 52px;
+  width: 128px;
+  color: rgba(62, 66, 55, 0.4);
+  transform: rotate(-8deg);
+  pointer-events: none;
+}
+
+/* icons only, scattered loosely across the address side like stickers;
+   each has its own spot, tilt and slow drift. the stamp keeps the top-right */
+.pc-icons { position: absolute; inset: 0; }
+.pc-row { display: contents; }
+.pc-icon {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  transform: translate(-50%, -50%) rotate(var(--r));
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: 16px;
+}
+.pc-icon:focus-visible { outline: 2px solid #3d6b2f; outline-offset: 3px; }
+
+.pc-ic {
+  width: 58px; height: 58px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 16px;
+  color: #fffdf6;
+  box-shadow: 0 6px 14px rgba(20, 45, 15, 0.18);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.pc-ic svg { width: 27px; height: 27px; display: block; }
+.pc-ic.ci-email    { background: #2c7be5; }
+.pc-ic.ci-linkedin { background: #0a66c2; }
+.pc-ic.ci-strava   { background: #fc4c02; }
+.pc-ic.ci-beli     { background: #14532d; }
+.pc-ic.ci-resume   { background: #3d6b2f; }
+/* spots, as % of the address side (icon centers) */
+.pc-row:nth-child(1) .pc-icon:nth-child(2) { --x: 54%; --y: 45%; --r: 7deg; }
+.pc-row:nth-child(2) .pc-icon:nth-child(1) { --x: 19%; --y: 66%; --r: 11deg; }
+.pc-row:nth-child(2) .pc-icon:nth-child(2) { --x: 82%; --y: 70%; --r: -6deg; }
+.pc-row:nth-child(2) .pc-icon:nth-child(3) { --x: 50%; --y: 87%; --r: -2deg; }
+.pc-row:nth-child(1) .pc-icon:nth-child(1) { --x: 20%; --y: 24%; --r: -9deg; }
+
+.pc-ic { animation: pcDrift 6s ease-in-out infinite; }
+.pc-row:nth-child(1) .pc-icon:nth-child(2) .pc-ic { animation-duration: 7.2s; animation-delay: -2s; }
+.pc-row:nth-child(2) .pc-icon:nth-child(1) .pc-ic { animation-duration: 6.6s; animation-delay: -4s; }
+.pc-row:nth-child(2) .pc-icon:nth-child(2) .pc-ic { animation-duration: 7.8s; animation-delay: -1s; }
+.pc-row:nth-child(2) .pc-icon:nth-child(3) .pc-ic { animation-duration: 6.9s; animation-delay: -3s; }
+@keyframes pcDrift {
+  0%, 100% { translate: 0 0; rotate: 0deg; }
+  50% { translate: 0 -4px; rotate: 2deg; }
+}
+@media (prefers-reduced-motion: reduce) { .pc-ic { animation: none; } }
+
+.pc-icon:hover .pc-ic, .pc-icon:focus-visible .pc-ic {
+  animation-play-state: paused;
+  transform: translateY(-4px) scale(1.06);
+  box-shadow: 0 12px 22px rgba(20, 45, 15, 0.3);
+}
+
+/* little speech bubble on hover */
+.pc-tip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(5px);
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #2f5526;
+  color: #fffdf6;
+  font: 600 0.72rem 'Poppins', sans-serif;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 5;
+}
+.pc-tip::after {
+  content: '';
+  position: absolute;
+  top: 100%; left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #2f5526;
+}
+.pc-icon:hover .pc-tip, .pc-icon:focus-visible .pc-tip, .pc-icon.is-copied .pc-tip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (max-width: 760px) {
+  .postcard {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.3rem;
+    transform: rotate(-0.6deg);
+    padding-top: 2.6rem;
+  }
+  .pc-divider { height: 1px; }
+  .pc-stamp { width: 60px; height: 72px; }
+  .pc-stamp-inner svg { width: 26px; height: 26px; }
+  .pc-postmark { display: none; }
+  .pc-address { min-height: 300px; }
+}
+
+/* mobile-only first-time hint: JS adds .show on touch devices, then .gone
+   after the first tap (or a few seconds). Invisible on desktop. */
+.tap-hint {
+  position: absolute;
+  top: 64%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: #fdfdf7;
+  text-shadow: 0 1px 3px rgba(15, 40, 10, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+.tap-hint.show { animation: tapHintBob 2.6s ease-in-out infinite; }
+.tap-hint.gone { opacity: 0 !important; animation: none; }
+@keyframes tapHintBob {
+  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.55; }
+  50% { transform: translateX(-50%) translateY(-4px); opacity: 0.95; }
+}
+
+.topnav a, .home-mark { transition: opacity 0.2s ease, color 0.3s ease; }
+
+/* pages below the nav: backgrounds live on #pageBg, sections fill the visible area */
+main > .page-section { height: auto; min-height: 100%; }
+main > #about, main > #projects { background: transparent; }
+main > #about { padding-top: clamp(0.8rem, 3vh, 2rem); }
+main > #projects { padding-top: clamp(0.8rem, 3vh, 2rem); }
+</style>
+</head>
+<body>
+
+<canvas id="grass"></canvas>
+<div id="pageBg" aria-hidden="true"></div>
+<canvas id="wind"></canvas>
+<div id="flowerLayer"></div>
+
+<a href="#home" class="home-mark" id="homeMark" aria-label="Home">ajk</a>
+
+<nav class="topnav">
+  <a href="#projects">Work</a>
+  <a href="#about">Gallery</a>
+  <a href="#contact">Contact</a>
+  <a href="https://www.linkedin.com/in/alyssa-jkang" target="_blank" rel="noopener" class="linkedin" aria-label="LinkedIn">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+      <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.03-1.85-3.03-1.86 0-2.15 1.45-2.15 2.94v5.66H9.35V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/>
+    </svg>
+  </a>
+</nav>
+
+<main id="main">
+
+  <section class="hero is-active" id="home">
+    <h1>Alyssa<br>J. Kang</h1>
+    <div class="tap-hint" id="tapHint" aria-hidden="true">tap the grass</div>
+    <button class="scroll-hint" id="scrollHint" aria-label="Go to Work">
+      <svg viewBox="0 0 14 8" width="15" height="9"><path d="M2 1.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg viewBox="0 0 14 8" width="15" height="9"><path d="M2 1.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </section>
+
+  <section class="page-section" id="about">
+    <div class="about-wall" id="aboutWall">
+      <button class="about-card" type="button" style="--tilt:-1deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_0468.jpg" width="2000" height="1500" loading="lazy" decoding="async" alt="A collection of polaroid photographs"></span>
+          <span class="about-card-face about-card-back"><strong><h3>little archives</h3></strong><p>A few snapshots from the people and places that make up my life outside of work.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:1.5deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_8723.jpg" width="2000" height="1500" loading="lazy" decoding="async" alt="A tree canopy viewed from below"></span>
+          <span class="about-card-face about-card-back"><strong><h3>look up</h3></strong><p>I am happiest when I am paying attention to small details that are easy to walk past.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_8079.jpg" width="2000" height="1500" loading="lazy" decoding="async" alt="A blue mountain landscape"></span>
+          <span class="about-card-face about-card-back"><strong><h3>wide horizons</h3></strong><p>Mountains, long walks, and any excuse to trade a screen for a view.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:-2deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_7111.jpg" width="2000" height="1125" loading="lazy" decoding="async" alt="A lively street gathering"></span>
+          <span class="about-card-face about-card-back"><strong><h3>in the mix</h3></strong><p>I like being around people, ideas, and places that are moving in many directions at once.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_6913.jpg" width="2000" height="1502" loading="lazy" decoding="async" alt="A dessert at a restaurant"></span>
+          <span class="about-card-face about-card-back"><strong><h3>sweet tooth</h3></strong><p>Some of my best ideas arrive after a good meal—or at least after dessert.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:1deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_6739.jpg" width="2000" height="1500" loading="lazy" decoding="async" alt="A city view at sunset"></span>
+          <span class="about-card-face about-card-back"><strong><h3>city light</h3></strong><p>I grew up in New York, so I have a soft spot for dense cities and their constant motion.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:-1deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_6513.jpg" width="1500" height="2000" loading="lazy" decoding="async" alt="A small black and white dog"></span>
+          <span class="about-card-face about-card-back"><strong><h3>good company</h3></strong><p>Small creatures, big personalities, and the occasional interruption to a work session.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_5975.jpg" width="2000" height="1500" loading="lazy" decoding="async" alt="Two friends laughing outdoors"></span>
+          <span class="about-card-face about-card-back"><strong><h3>laughing hard</h3></strong><p>I care a lot about building things, but I care just as much about the people I build them with.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:2deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_4351.jpg" width="2000" height="1500" loading="lazy" decoding="async" alt="A sunny beach scene with friends"></span>
+          <span class="about-card-face about-card-back"><strong><h3>outside</h3></strong><p>When I am not working, I am usually trying to spend more time outside than inside.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_4231.jpg" width="2000" height="1500" loading="lazy" decoding="async" alt="A group gathered outdoors"></span>
+          <span class="about-card-face about-card-back"><strong><h3>good groups</h3></strong><p>One of my favorite things is finding community in unexpected places.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:-1.5deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_9769.jpg" width="1500" height="2000" loading="lazy" decoding="async" alt="Two people sitting near a waterfall"></span>
+          <span class="about-card-face about-card-back"><strong><h3>take the long way</h3></strong><p>I will almost always choose the scenic route, especially if it ends near water or a trail.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:1deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_7421.jpg" width="1500" height="2000" loading="lazy" decoding="async" alt="A cat resting on a blanket"></span>
+          <span class="about-card-face about-card-back"><strong><h3>quiet moments</h3></strong><p>Not everything needs to be optimized. Some moments are best left slow and ordinary.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_5723.jpg" width="1500" height="2000" loading="lazy" decoding="async" alt="A person outdoors in front of greenery"></span>
+          <span class="about-card-face about-card-back"><strong><h3>curious always</h3></strong><p>I like learning by doing, asking too many questions, and following an idea until it becomes something real.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:-2deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_1210.JPG" width="1200" height="1800" loading="lazy" decoding="async" alt="A strip of photo booth portraits"></span>
+          <span class="about-card-face about-card-back"><strong><h3>no serious poses</h3></strong><p>A reminder that a portfolio can be thoughtful without taking itself too seriously.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:1deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="DSCN5432.jpg" width="2000" height="1500" loading="lazy" decoding="async" alt="Blue mountains in the distance"></span>
+          <span class="about-card-face about-card-back"><strong><h3>perspective</h3></strong><p>Getting far enough away from a problem usually helps me see its shape more clearly.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="DSCN5321.jpg" width="2000" height="1500" loading="lazy" decoding="async" alt="A mountain ridge and a hand holding fruit"></span>
+          <span class="about-card-face about-card-back"><strong><h3>small victories</h3></strong><p>There is something satisfying about making it to the top and stopping for a snack.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:-1deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="DSCN5084.jpg" width="1500" height="2000" loading="lazy" decoding="async" alt="A green path leading toward the ocean"></span>
+          <span class="about-card-face about-card-back"><strong><h3>keep going</h3></strong><p>I like projects that start as a path and become a place I did not expect to reach.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="B159AC7A-58B8-4483-8F72-F709399B06C1IMG_5665.jpg" width="1500" height="2000" loading="lazy" decoding="async" alt="Two friends smiling indoors"></span>
+          <span class="about-card-face about-card-back"><strong><h3>familiar faces</h3></strong><p>The people around me keep ambitious work grounded, funny, and human.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:1.5deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="Group_Upper_V2_security_guard_removed.jpg" width="2000" height="1333" loading="lazy" decoding="async" alt="A group standing together indoors"></span>
+          <span class="about-card-face about-card-back"><strong><h3>team energy</h3></strong><p>I do my best work in rooms where people are generous with ideas and serious about follow-through.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:-1deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_3842.jpg" width="2000" height="1142" loading="lazy" decoding="async" alt="People standing on wide stone steps"></span>
+          <span class="about-card-face about-card-back"><strong><h3>in progress</h3></strong><p>This is the part of the story that is still being written.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:1deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="DSCN4305.JPG" width="2000" height="1500" loading="lazy" decoding="async" alt="A person looking over a blue coastline"></span>
+          <span class="about-card-face about-card-back"><strong><h3>near the edge</h3></strong><p>There is always another coastline, trail, or horizon I want to see for myself.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:-1deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="DSCN3863.JPG" width="2000" height="1500" loading="lazy" decoding="async" alt="A person standing beside the ocean"></span>
+          <span class="about-card-face about-card-back"><strong><h3>ocean air</h3></strong><p>Some places make it easier to slow down and let your thoughts rearrange themselves.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="5412263216049649191.JPG" width="2000" height="1500" loading="lazy" decoding="async" alt="Four friends smiling together"></span>
+          <span class="about-card-face about-card-back"><strong><h3>the people part</h3></strong><p>Accomplishments are more fun when there are people nearby to celebrate them with.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:1.5deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_3394.jpg" width="2000" height="1500" loading="lazy" decoding="async" alt="Two people sitting in a mountain landscape"></span>
+          <span class="about-card-face about-card-back"><strong><h3>high places</h3></strong><p>I like the particular mix of effort, quiet, and perspective that comes with a good climb.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:-1.5deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_3314.jpg" width="1500" height="2000" loading="lazy" decoding="async" alt="A person climbing across a rocky landscape"></span>
+          <span class="about-card-face about-card-back"><strong><h3>one step at a time</h3></strong><p>Hard things become much less intimidating once I start moving through them.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_0019.jpg" width="1500" height="2000" loading="lazy" decoding="async" alt="A person standing in a leafy doorway"></span>
+          <span class="about-card-face about-card-back"><strong><h3>between places</h3></strong><p>I am drawn to thresholds: the moment before a trip, a project, or a new idea begins.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:2deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="827DBBD9-CBBF-42BC-A907-9C848ED0AB18.JPG" width="1125" height="2000" loading="lazy" decoding="async" alt="A desert landscape at dusk"></span>
+          <span class="about-card-face about-card-back"><strong><h3>quiet landscapes</h3></strong><p>Wide-open spaces are a useful reminder that not every thought needs an immediate answer.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:-1deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="4840B95D-FCAD-4DA3-A699-4DF551B42E84.JPG" width="828" height="1472" loading="lazy" decoding="async" alt="A lake and mountain landscape beneath clouds"></span>
+          <span class="about-card-face about-card-back"><strong><h3>weather permitting</h3></strong><p>My ideal day involves a dramatic sky, a body of water, and nowhere I urgently need to be.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="8844C489-5275-44A5-A560-2D47A8094ED8.JPG" width="828" height="552" loading="lazy" decoding="async" alt="A table tennis team posing together"></span>
+          <span class="about-card-face about-card-back"><strong><h3>competitive joy</h3></strong><p>I like the combination of precision, nerves, and ridiculous fun that comes with a good match.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:1deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="Screen Shot 2021-01-26 at 9.39.41 AM.jpg" width="1216" height="768" loading="lazy" decoding="async" alt="A youth table tennis group portrait"></span>
+          <span class="about-card-face about-card-back"><strong><h3>find your team</h3></strong><p>The best teams make improvement feel communal instead of lonely.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:-2deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_1379.JPG" width="2000" height="1333" loading="lazy" decoding="async" alt="Three kids in front of the Washington Monument"></span>
+          <span class="about-card-face about-card-back"><strong><h3>the archive grows</h3></strong><p>Every year adds new people, places, and stories to the collection.</p></span>
+        </span>
+      </button>
+      <button class="about-card" type="button" style="--tilt:1.5deg">
+        <span class="about-card-inner">
+          <span class="about-card-face about-card-front"><img src="IMG_0909.JPG" width="2000" height="1500" loading="lazy" decoding="async" alt="Two people sitting outside with a toddler"></span>
+          <span class="about-card-face about-card-back"><strong><h3>home team</h3></strong><p>Family, friends, and the people who knew me before the résumé are the real foundation.</p></span>
+        </span>
+      </button>
+    </div>
+  </section>
+
+  <section class="page-section" id="projects">
+    <div class="work-shell">
+      <div class="work-heading">
+        <h2>selected work</h2>
+      </div>
+
+      <div class="work-group">
+        <div class="work-group-label">Projects &amp; experience</div>
+
+        <article class="work-card">
+          <div>
+            <h3>NucleAI</h3>
+            <div class="work-meta">CS50 final project · Fall 2026</div>
+            <div class="work-tags"><span class="work-tag">React</span><span class="work-tag">TypeScript</span><span class="work-tag">OpenAI API</span></div>
+          </div>
+          <p>Built a full-stack AI web app that helps nuclear startups draft NRC Safety Analysis Reports across all 19 NUREG-0800 chapters. Licensing paperwork is one of the biggest bottlenecks to deploying new reactors, so NucleAI turns a slow, manual process into structured, chapter-by-chapter drafts that teams can review and refine. <a class="work-link" href="https://github.com/ajkangg/NucleAI" target="_blank" rel="noopener">View on GitHub&nbsp;↗</a></p>
+        </article>
+
+        <article class="work-card">
+          <div>
+            <h3>Clean Energy Infrastructure</h3>
+            <div class="work-meta">Harvard Undergraduate Clean Energy Group · Spring 2026</div>
+            <div class="work-tags"><span class="work-tag">Energy research</span><span class="work-tag">Market analysis</span><span class="work-tag">Cost modeling</span></div>
+          </div>
+          <p>Evaluated siting and market opportunities for modular nuclear plants through expert interviews and techno-economic analysis. Worked with a client team to compare potential regions on cost, regulatory landscape, and energy demand, and turned the findings into recommendations for where small reactors could make the most impact.</p>
+        </article>
+
+        <article class="work-card">
+          <div>
+            <h3>Growth &amp; GTM</h3>
+            <div class="work-meta">Cotera · Summer 2026</div>
+            <div class="work-tags"><span class="work-tag">Strategy</span><span class="work-tag">Product</span><span class="work-tag">Integrations</span></div>
+          </div>
+          <p>Restructured outbound strategy, shipped five application integrations, and improved the product’s website and onboarding flow. Working directly with the CEO at an early-stage startup, I also produced product demo videos and marketing assets, moving between strategy, code, and design wherever the team needed it.</p>
+          <div class="work-videos" aria-label="Videos I made for Cotera">
+            <a class="work-video" href="https://www.youtube.com/watch?v=34X9B8d02bw" target="_blank" rel="noopener" data-yt="34X9B8d02bw">
+              <span class="wv-frame"><img src="https://i.ytimg.com/vi/34X9B8d02bw/hqdefault.jpg" alt="" loading="lazy" onerror="this.remove()"><span class="wv-play" aria-hidden="true"></span></span>
+              <span class="wv-title">Coco X Slack Launch!</span>
+            </a>
+            <a class="work-video" href="https://www.youtube.com/watch?v=hY5KQRQ_E64" target="_blank" rel="noopener" data-yt="hY5KQRQ_E64">
+              <span class="wv-frame"><img src="https://i.ytimg.com/vi/hY5KQRQ_E64/hqdefault.jpg" alt="" loading="lazy" onerror="this.remove()"><span class="wv-play" aria-hidden="true"></span></span>
+              <span class="wv-title">How to run AI agents inside of Snowflake</span>
+            </a>
+            <a class="work-video" href="https://www.youtube.com/watch?v=ToH6cnk8ris" target="_blank" rel="noopener" data-yt="ToH6cnk8ris">
+              <span class="wv-frame"><img src="https://i.ytimg.com/vi/ToH6cnk8ris/hqdefault.jpg" alt="" loading="lazy" onerror="this.remove()"><span class="wv-play" aria-hidden="true"></span></span>
+              <span class="wv-title">How to make agents reliable with AI workflows</span>
+            </a>
+          </div>
+        </article>
+      </div>
+
+      <div class="work-group">
+        <div class="work-group-label">Research</div>
+
+        <article class="work-card">
+          <div>
+            <h3>Deep-Sea Volcanism and Glacial Cycles</h3>
+            <div class="work-meta">Langmuir Lab · Harvard EPS · Ongoing</div>
+            <div class="work-tags"><span class="work-tag">Geochemistry</span><span class="work-tag">LA-ICP-MS</span><span class="work-tag">Spectral analysis</span></div>
+          </div>
+          <p>Processing sediment cores and analyzing basalt-glass compositions to study whether glacial sea-level cycles influence ocean-ridge volcanism. As ice sheets grow and shrink, falling sea levels may change the pressure on mid-ocean ridges and the rate at which they erupt; the geochemistry preserved in volcanic glass helps test that link.</p>
+        </article>
+
+        <article class="work-card">
+          <div>
+            <h3>Biomimetic Architecture</h3>
+            <div class="work-meta">Measuring Mather · Ongoing</div>
+            <div class="work-tags"><span class="work-tag">Experiments</span><span class="work-tag">Sustainability</span><span class="work-tag">Data analysis</span></div>
+          </div>
+          <p>Designing controlled experiments comparing nasal-inspired and conventional ventilation systems using temperature, humidity, and energy data. The project asks whether the way noses warm and humidify air can inspire buildings that stay comfortable while using less energy for heating and cooling.</p>
+        </article>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="page-section" id="contact">
+    <article class="postcard" aria-label="Contact postcard">
+      <div class="pc-header" aria-hidden="true">post card</div>
+      <div class="pc-note">
+        <h2>say hai! :)</h2>
+        <p class="pc-message">You can usually find me climbing at <span>Central Rock Gym</span>, camped out in the <span>Smith Campus Center</span>, walking along the <span>Charles</span> or the <span>Hudson</span>, or eating pho at <span>Le's</span>. Otherwise, here's where to reach me!</p>
+        <p class="pc-sign">— alyssa</p>
+      </div>
+      <div class="pc-divider" aria-hidden="true"></div>
+      <div class="pc-address">
+        <div class="pc-stamp" aria-hidden="true">
+          <div class="pc-stamp-inner">
+            <svg viewBox="0 0 48 48" width="34" height="34"><g fill="#f6b8c8"><ellipse cx="24" cy="12.5" rx="5.2" ry="8.6" transform="rotate(0 24 24)"/><ellipse cx="24" cy="12.5" rx="5.2" ry="8.6" transform="rotate(72 24 24)"/><ellipse cx="24" cy="12.5" rx="5.2" ry="8.6" transform="rotate(144 24 24)"/><ellipse cx="24" cy="12.5" rx="5.2" ry="8.6" transform="rotate(216 24 24)"/><ellipse cx="24" cy="12.5" rx="5.2" ry="8.6" transform="rotate(288 24 24)"/></g><circle cx="24" cy="24" r="4.2" fill="#f6d77a"/></svg>
+            <span>ajk</span>
+          </div>
+        </div>
+        <svg class="pc-postmark" viewBox="0 0 120 70" aria-hidden="true">
+          <circle cx="35" cy="35" r="26" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          <circle cx="35" cy="35" r="20" fill="none" stroke="currentColor" stroke-width="0.8"/>
+          <text x="35" y="33" text-anchor="middle" font-size="7" font-weight="600" fill="currentColor" letter-spacing="0.6">CAMBRIDGE</text>
+          <text x="35" y="42" text-anchor="middle" font-size="6.5" fill="currentColor">MA · 2026</text>
+          <path d="M64 22 q7 -5 14 0 t14 0 t14 0 M64 35 q7 -5 14 0 t14 0 t14 0 M64 48 q7 -5 14 0 t14 0 t14 0" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        </svg>
+        <div class="pc-icons">
+          <div class="pc-row">
+            <a class="pc-icon" href="mailto:ajkangg@gmail.com" aria-label="Email ajkangg@gmail.com"><span class="pc-ic ci-email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span><span class="pc-tip">ajkangg@gmail.com</span></a>
+            <a class="pc-icon" href="https://www.linkedin.com/in/alyssa-jkang" target="_blank" rel="noopener" aria-label="LinkedIn"><span class="pc-ic ci-linkedin"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.03-1.85-3.03-1.86 0-2.15 1.45-2.15 2.94v5.66H9.35V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/></svg></span><span class="pc-tip">LinkedIn</span></a>
+          </div>
+          <div class="pc-row">
+            <a class="pc-icon" href="https://strava.app.link/NA436LC3c5b" target="_blank" rel="noopener" aria-label="Strava"><span class="pc-ic ci-strava"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg></span><span class="pc-tip">follow me here!</span></a>
+            <button class="pc-icon" type="button" data-copy="boingoingoinggg" aria-label="Beli: copy handle @boingoingoinggg"><span class="pc-ic ci-beli"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg></span><span class="pc-tip">add me @boingoingoinggg!</span></button>
+            <a class="pc-icon" href="resume.pdf" target="_blank" rel="noopener" aria-label="Résumé (PDF)"><span class="pc-ic ci-resume"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg></span><span class="pc-tip">résumé</span></a>
+          </div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+</main>
+
+<div id="memoryCard" role="tooltip" aria-hidden="true"></div>
+
+<script>
+// ---------- grass field ----------
+const grass = document.getElementById('grass');
+const gtx = grass.getContext('2d');
+const wind = document.getElementById('wind');
+const wtx = wind.getContext('2d');
+
+// mostly light blades over the base green, plus a few dark ones for depth
+const BLADE_LIGHTS = ['#8ac95e', '#7ab84e', '#97d16b', '#6da344'];
+const BLADE_DARKS = ['#3e6b27', '#476f2d'];
+const windBlades = [];
+
+function bladeColor() {
+  return Math.random() < 0.72
+    ? BLADE_LIGHTS[(Math.random() * BLADE_LIGHTS.length) | 0]
+    : BLADE_DARKS[(Math.random() * BLADE_DARKS.length) | 0];
+}
+
+function drawGrass() {
+  grass.width = wind.width = innerWidth * devicePixelRatio;
+  grass.height = wind.height = innerHeight * devicePixelRatio;
+  gtx.scale(devicePixelRatio, devicePixelRatio);
+  const vw = innerWidth, vh = innerHeight;
+
+  // base wash: brighter toward the upper left, like the reference
+  const base = gtx.createLinearGradient(0, 0, vw, vh);
+  base.addColorStop(0, '#6ba34a');
+  base.addColorStop(0.5, '#578c39');
+  base.addColorStop(1, '#4a7a30');
+  gtx.fillStyle = base;
+  gtx.fillRect(0, 0, vw, vh);
+
+  // static dense blade layer
+  const count = (vw * vh) / 130;
+  gtx.lineCap = 'round';
+  for (let i = 0; i < count; i++) {
+    const x = Math.random() * vw;
+    const y = Math.random() * vh;
+    const len = 10 + Math.random() * 16;
+    const a = Math.random() * Math.PI * 2;
+    gtx.strokeStyle = bladeColor();
+    gtx.globalAlpha = 0.45 + Math.random() * 0.45;
+    gtx.lineWidth = 1 + Math.random() * 1.1;
+    const mx = x + Math.cos(a) * len * 0.5;
+    const my = y + Math.sin(a) * len * 0.5;
+    const a2 = a + (Math.random() - 0.5) * 0.7;
+    gtx.beginPath();
+    gtx.moveTo(x, y);
+    gtx.lineTo(mx, my);
+    gtx.lineTo(mx + Math.cos(a2) * len * 0.5, my + Math.sin(a2) * len * 0.5);
+    gtx.stroke();
+  }
+  gtx.globalAlpha = 1;
+  gtx.setTransform(1, 0, 0, 1, 0, 0);
+
+  // sparse swaying layer, animated each frame
+  windBlades.length = 0;
+  const windCount = (vw * vh) / 900;
+  for (let i = 0; i < windCount; i++) {
+    windBlades.push({
+      x: Math.random() * vw,
+      y: Math.random() * vh,
+      len: 12 + Math.random() * 18,
+      a: Math.random() * Math.PI * 2,
+      color: bladeColor(),
+      width: 1 + Math.random() * 1.1,
+      alpha: 0.5 + Math.random() * 0.4,
+      phase: Math.random() * Math.PI * 2,
+    });
+  }
+}
+
+function animateWind(now) {
+  const t = now / 1000;
+  wtx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  wtx.clearRect(0, 0, innerWidth, innerHeight);
+  wtx.lineCap = 'round';
+
+  // the wind heading meanders slowly around "blowing toward lower-right"
+  const dir = -0.5 + Math.sin(t * 0.18) * 0.3;
+  const wx = Math.cos(dir), wy = Math.sin(dir);
+
+  for (const b of windBlades) {
+    // gust strength travels across the lawn as a wave; blades bow with it,
+    // spring back past neutral, and flutter slightly on their own
+    const gust = Math.sin(t * 2.2 - (b.x * 0.004 + b.y * 0.002)) * 0.5 + 0.5;
+    const bend = (gust * 0.85 + Math.sin(t * 3.6 + b.phase) * 0.12) * b.len * 0.45;
+
+    // blade tips are pushed along the wind direction; the middle follows
+    // less, so the blade visibly bends rather than rotating
+    const tipX = b.x + Math.cos(b.a) * b.len + wx * bend;
+    const tipY = b.y + Math.sin(b.a) * b.len + wy * bend;
+    const midX = b.x + Math.cos(b.a) * b.len * 0.5 + wx * bend * 0.3;
+    const midY = b.y + Math.sin(b.a) * b.len * 0.5 + wy * bend * 0.3;
+
+    wtx.strokeStyle = b.color;
+    wtx.globalAlpha = b.alpha;
+    wtx.lineWidth = b.width;
+    wtx.beginPath();
+    wtx.moveTo(b.x, b.y);
+    wtx.quadraticCurveTo(midX, midY, tipX, tipY);
+    wtx.stroke();
+  }
+  requestAnimationFrame(animateWind);
+}
+
+drawGrass();
+addEventListener('resize', drawGrass);
+if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  requestAnimationFrame(animateWind);
+}
+
+// ---------- flowers bloom along the cursor path ----------
+const flowerLayer = document.getElementById('flowerLayer');
+// palettes matched to the reference: white daisies, pinks with warm
+// centers, orange, marigold yellow, lavender, rose
+// petite blooms: long slender petals radiating from a small center
+const PALETTES = [
+  { petal: '#ffffff', center: '#f2c245', count: 8, rx: 2.4, ry: 9 },
+  { petal: '#f7a8c3', center: '#e8913f', count: 6, rx: 2.8, ry: 9.4 },
+  { petal: '#f2913f', center: '#f2c245', count: 6, rx: 2.8, ry: 9.4 },
+  { petal: '#f7c93d', center: '#e8913f', count: 6, rx: 2.8, ry: 9.4 },
+  { petal: '#b7a3e8', center: '#f2c245', count: 6, rx: 2.8, ry: 9.4 },
+  { petal: '#f27ba7', center: '#f2c245', count: 5, rx: 3, ry: 9.8 },
+];
+const FLOWER_LIFE = 1150;  // ms until a bloom is removed (matches CSS wilt end)
+
+function flowerSVG(size) {
+  const c = PALETTES[(Math.random() * PALETTES.length) | 0];
+  let petals = '';
+  for (let i = 0; i < c.count; i++) {
+    petals += `<ellipse cx="24" cy="12.5" rx="${c.rx}" ry="${c.ry}" fill="${c.petal}" transform="rotate(${(360 / c.count) * i} 24 24)"/>`;
+  }
+  return `<svg viewBox="0 0 48 48" width="${size}" height="${size}" style="transform:rotate(${(Math.random() * 90 - 45) | 0}deg)">${petals}<circle cx="24" cy="24" r="3.8" fill="${c.center}"/></svg>`;
+}
+
+function bloom(x, y) {
+  const el = document.createElement('div');
+  el.className = 'flower';
+  el.style.left = (x + (Math.random() * 26 - 13)) + 'px';
+  el.style.top = (y + (Math.random() * 26 - 13)) + 'px';
+  el.innerHTML = flowerSVG(20 + Math.random() * 14);
+  flowerLayer.appendChild(el);
+  setTimeout(() => el.remove(), FLOWER_LIFE);
+}
+
+// --- desktop: bloom along the mouse trail (unchanged) ---
+// gated to mouse pointers so a touch scroll never sprinkles flowers
+let last = null;
+addEventListener('pointermove', (e) => {
+  if (e.pointerType && e.pointerType !== 'mouse') return;
+  if (last) {
+    const dx = e.clientX - last.x, dy = e.clientY - last.y;
+    if (dx * dx + dy * dy < 22 * 22) return;  // plant every ~22px of travel
+  }
+  last = { x: e.clientX, y: e.clientY };
+  bloom(e.clientX, e.clientY);
+});
+
+// --- touch devices: there's no cursor to trail, so instead tap to plant a
+// small cluster, plus a gentle ambient sprinkle so the garden feels alive
+// even for someone just reading. Only runs on touch-primary devices, so the
+// desktop experience above is completely untouched. ---
+const touchPrimary = matchMedia('(hover: none) and (pointer: coarse)').matches;
+const calmMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+if (touchPrimary) {
+  // first-time hint: nudge visitors to tap, then fade it after the first
+  // tap (or after ~7s if they never tap)
+  const tapHint = document.getElementById('tapHint');
+  if (tapHint) {
+    tapHint.classList.add('show');
+    const hideHint = () => tapHint.classList.add('gone');
+    addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') hideHint(); }, { once: true, passive: true });
+    setTimeout(hideHint, 7000);
+  }
+
+  // tap → a little burst of 2–3 blooms around the touch point
+  addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch') return;
+    const n = 2 + (Math.random() * 2 | 0);
+    for (let i = 0; i < n; i++) {
+      bloom(e.clientX + (Math.random() * 36 - 18), e.clientY + (Math.random() * 36 - 18));
+    }
+  }, { passive: true });
+
+  // ambient sprinkle: one bloom drifts open somewhere every ~1.6s
+  if (!calmMotion) {
+    setInterval(() => {
+      if (document.hidden) return;               // pause when the tab isn't visible
+      bloom(Math.random() * innerWidth, Math.random() * innerHeight);
+    }, 1600);
+  }
+}
+
+// ---------- page navigation ----------
+// each section is a separate page (#home, #about, #projects, #contact);
+// only the active one is displayed, so you can't scroll from one into another
+const mainEl = document.getElementById('main');
+const PAGES = ['home', 'about', 'projects', 'contact'];
+
+function showPage(id) {
+  if (!PAGES.includes(id)) id = 'home';
+  document.body.dataset.page = id;
+  document.querySelectorAll('main > section').forEach((s) => {
+    s.classList.toggle('is-active', s.id === id);
+  });
+  document.querySelectorAll('.topnav a[href^="#"]').forEach((a) => {
+    if (a.getAttribute('href') === '#' + id) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  });
+  mainEl.scrollTop = 0;
+}
+
+function goTo(id) {
+  if (location.hash.slice(1) === id) { showPage(id); return; }
+  location.hash = id;   // fires hashchange, keeps back/forward working
+}
+
+addEventListener('hashchange', () => showPage(location.hash.slice(1)));
+showPage(location.hash.slice(1));
+
+document.getElementById('scrollHint').addEventListener('click', () => goTo('projects'));
+
+document.getElementById('homeMark').addEventListener('click', (e) => {
+  e.preventDefault();
+  goTo('home');
+});
+
+document.querySelectorAll('.topnav a[href^="#"]').forEach((a) => {
+  a.addEventListener('click', (e) => {
+    e.preventDefault();
+    goTo(a.getAttribute('href').slice(1));
+  });
+});
+
+// ---------- contact: Beli icon copies the handle ----------
+document.querySelectorAll('.pc-icon[data-copy]').forEach((btn) => {
+  const tip = btn.querySelector('.pc-tip');
+  const original = tip.textContent;
+  btn.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(btn.dataset.copy); }
+    catch (_) {
+      const t = document.createElement('textarea');
+      t.value = btn.dataset.copy; document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); } catch (_) {}
+      t.remove();
+    }
+    tip.textContent = 'copied handle!';
+    btn.classList.add('is-copied');
+    clearTimeout(btn._t);
+    btn._t = setTimeout(() => { tip.textContent = original; btn.classList.remove('is-copied'); }, 1600);
+  });
+});
+
+// ---------- cotera videos: swap thumbnail for the YouTube player on click ----------
+document.querySelectorAll('.work-video').forEach((v) => {
+  v.addEventListener('click', (e) => {
+    const frame = v.querySelector('.wv-frame');
+    if (frame.querySelector('iframe')) return;
+    e.preventDefault();
+    const f = document.createElement('iframe');
+    f.src = `https://www.youtube-nocookie.com/embed/${v.dataset.yt}?autoplay=1&rel=0`;
+    f.title = v.querySelector('.wv-title').textContent;
+    f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+    f.allowFullscreen = true;
+    frame.innerHTML = '';
+    frame.appendChild(f);
+  });
+});
+
+// ---------- about section: flashcard photo wall ----------
+// (flip on click disabled for now — gallery photos are static)
+
+// The previous experimental physics pile is kept below for reference but
+// disabled now that About uses the photo flashcards.
+if (false) {
+// Alyssa's actual drawings, sliced from her original (photos/doodles/*.png,
+// black background keyed to transparent). size = width in vw; aspect =
+// height/width of the sliced PNG, used so the stacking knows each piece's
+// true footprint. photo/story fill the hover memory card.
+const GARBAGE = [
+  { name: 'Pointe shoes', img: 'photos/doodles/pointe.png', aspect: 164 / 140, size: 10, r: -8,
+    photo: null, story: 'Add the story: years en pointe, blisters earned.' },
+  { name: 'The good toast', img: 'photos/doodles/toast.png', aspect: 92 / 100, size: 8, r: 6,
+    photo: null, story: 'Add the story: the breakfast that fixes everything.' },
+  { name: 'Ping pong paddle', img: 'photos/doodles/paddle.png', aspect: 142 / 122, size: 9, r: -5,
+    photo: null, story: 'Add the story: basement tournaments, no mercy.' },
+  { name: 'The purple cup', img: 'photos/doodles/cup.png', aspect: 96 / 72, size: 7, r: -12,
+    photo: null, story: 'Add the story: emotional support beverage vessel.' },
+  { name: 'Ballet slippers', img: 'photos/doodles/slippers.png', aspect: 124 / 100, size: 9, r: 8,
+    photo: null, story: 'Add the story: where the dancing started.' },
+  { name: 'The flats', img: 'photos/doodles/flat.png', aspect: 76 / 108, size: 9, r: 9,
+    photo: null, story: 'Add the story: walked entire cities flat.' },
+  { name: 'Concert ticket', img: 'photos/doodles/ticket.png', aspect: 92 / 116, size: 10, r: -6,
+    photo: 'photos/web/IMG_4893.jpg', story: 'Front row energy — add which show this was!' },
+  { name: 'IKEA runs', img: 'photos/doodles/ikea.png', aspect: 124 / 140, size: 11, r: 14,
+    photo: null, story: 'Add the story: meatballs and impulse lamps.' },
+  { name: 'Banana peel', img: 'photos/doodles/banana.png', aspect: 118 / 156, size: 11, r: -14,
+    photo: null, story: 'Add the story: a slapstick moment I refuse to forget.' },
+  { name: 'Photobooth strip', img: 'photos/doodles/photobooth.png', aspect: 152 / 88, size: 7, r: 12,
+    photo: null, story: 'Add the story: four frames, zero dignity.' },
+  { name: 'The pickle', img: 'photos/doodles/pickle.png', aspect: 124 / 60, size: 5, r: 22,
+    photo: null, story: 'Add the story: it means something, I promise.' },
+  { name: 'The camera', img: 'photos/doodles/camera.png', aspect: 100 / 108, size: 9, r: -9,
+    photo: null, story: 'Add the story: the lens behind every photo here.' },
+];
+
+// build one DOM element per memory — exactly one of each, no fillers
+const landfillEl = document.getElementById('landfill');
+const memoryCard = document.getElementById('memoryCard');
+const aboutEl = document.getElementById('about');
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// with only the 12 real pieces (fillers gone) each one is bumped up a bit
+// so the pile still fills the floor
+const PIECE_SCALE = 1.25;
+
+let pieces = [];   // { el, w, h, memory, body }
+
+function buildPieces() {
+  landfillEl.innerHTML = '';
+  pieces = [];
+  const W = landfillEl.clientWidth;
+  GARBAGE.forEach((m) => {
+    const w = (m.size * PIECE_SCALE / 100) * W;   // vw -> px
+    const h = w * m.aspect;
+    const el = document.createElement('div');
+    el.className = 'junk';
+    el.style.width = w + 'px';
+    el.tabIndex = 0;
+    el.setAttribute('role', 'img');
+    el.setAttribute('aria-label', m.name);
+    el.innerHTML = `<img src="${m.img}" alt="" draggable="false">`;
+    el._memory = m;
+    landfillEl.appendChild(el);
+    pieces.push({ el, w, h, memory: m, body: null });
+  });
+}
+
+// ---- physics: drop the pieces and let them pile up for real ----
+// Matter.js runs a rigid-body simulation; every frame we copy each body's
+// position and angle onto its doodle, so the drawings actually collide,
+// wedge together, and settle at whatever angles they land in — a fresh,
+// never-identical pile on every visit.
+let engine = null, rafId = 0, spawnTimers = [], running = false, hoveredEl = null;
+
+function startSim() {
+  if (running) return;
+  running = true;
+  if (typeof Matter === 'undefined') { placeStatic(); return; }  // lib didn't load
+
+  const W = landfillEl.clientWidth, H = landfillEl.clientHeight;
+  engine = Matter.Engine.create();
+  engine.gravity.y = 1.1;
+
+  // floor + side walls keep the pile inside the section
+  Matter.Composite.add(engine.world, [
+    Matter.Bodies.rectangle(W / 2, H + 60, W + 400, 120, { isStatic: true }),
+    Matter.Bodies.rectangle(-60, H / 2, 120, H * 3, { isStatic: true }),
+    Matter.Bodies.rectangle(W + 60, H / 2, 120, H * 3, { isStatic: true }),
+  ]);
+
+  // drop them in a shuffled order, one every ~160ms, from a random x above
+  // the top with a random spin — so no two dumps ever look the same
+  const order = pieces.map((_, i) => i);
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = (Math.random() * (i + 1)) | 0;
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  order.forEach((idx, k) => {
+    spawnTimers.push(setTimeout(() => {
+      if (!running) return;
+      const p = pieces[idx];
+      const x = p.w / 2 + 30 + Math.random() * Math.max(1, W - p.w - 60);
+      const body = Matter.Bodies.rectangle(x, -p.h - 40, p.w * 0.9, p.h * 0.86, {
+        restitution: 0.2,
+        friction: 0.7,
+        frictionAir: 0.008,
+        angle: (Math.random() - 0.5) * 1.2,
+        chamfer: { radius: Math.min(p.w, p.h) * 0.12 },
+      });
+      Matter.Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.28);
+      Matter.Body.setVelocity(body, { x: (Math.random() - 0.5) * 3, y: 0 });
+      p.body = body;
+      Matter.Composite.add(engine.world, body);
+    }, k * 160));
+  });
+
+  const step = () => {
+    Matter.Engine.update(engine, 1000 / 60);
+    for (const p of pieces) {
+      if (!p.body) continue;
+      const { x, y } = p.body.position;
+      p.el.style.transform =
+        `translate(${x - p.w / 2}px, ${y - p.h / 2}px) rotate(${p.body.angle}rad)`;
+    }
+    if (hoveredEl) positionCard(hoveredEl);   // keep the card glued while it settles
+    rafId = requestAnimationFrame(step);
+  };
+  rafId = requestAnimationFrame(step);
+}
+
+function stopSim() {
+  if (!running) return;
+  running = false;
+  cancelAnimationFrame(rafId);
+  spawnTimers.forEach(clearTimeout);
+  spawnTimers = [];
+  if (engine) {
+    Matter.Composite.clear(engine.world, false);
+    Matter.Engine.clear(engine);
+    engine = null;
+  }
+  // park every piece off-screen so the next entry re-drops a brand-new pile
+  for (const p of pieces) { p.body = null; p.el.style.transform = 'translate(-9999px, -9999px)'; }
+}
+
+// reduced-motion fallback: lay the pieces calmly along the floor, no drop
+function placeStatic() {
+  const W = landfillEl.clientWidth, H = landfillEl.clientHeight;
+  let x = 24, y = H - 24, rowH = 0;
+  for (const p of pieces) {
+    if (x + p.w > W - 24) { x = 24; y -= rowH + 16; rowH = 0; }
+    p.el.style.transform = `translate(${x}px, ${y - p.h}px)`;
+    x += p.w + 16;
+    rowH = Math.max(rowH, p.h);
+  }
+}
+
+// ---- the memory card follows whichever piece is hovered ----
+function positionCard(el) {
+  const r = el.getBoundingClientRect();
+  const cw = 240, ch = memoryCard.offsetHeight || 260;
+  let x = r.left + r.width / 2 - cw / 2;
+  x = Math.max(10, Math.min(innerWidth - cw - 10, x));
+  let y = r.top - ch - 12;                        // prefer above the item
+  if (y < 10) y = Math.min(r.bottom + 12, innerHeight - ch - 10);
+  memoryCard.style.left = x + 'px';
+  memoryCard.style.top = y + 'px';
+}
+
+function showMemory(el) {
+  const m = el._memory;
+  memoryCard.innerHTML =
+    (m.photo
+      ? `<img src="${m.photo}" alt="">`
+      : `<div class="mc-photo-empty">photo coming soon</div>`) +
+    `<p class="mc-title">${m.name}</p>` +
+    `<p class="mc-text">${m.story}</p>`;
+  memoryCard.classList.add('show');
+  hoveredEl = el;
+  positionCard(el);
+}
+
+function hideMemory() {
+  memoryCard.classList.remove('show');
+  hoveredEl = null;
+}
+
+landfillEl.addEventListener('mouseover', (e) => {
+  const junk = e.target.closest('.junk');
+  if (junk && junk._memory) showMemory(junk);
+});
+landfillEl.addEventListener('mouseout', (e) => {
+  if (e.target.closest('.junk')) hideMemory();
+});
+landfillEl.addEventListener('focusin', (e) => {
+  const junk = e.target.closest('.junk');
+  if (junk && junk._memory) showMemory(junk);
+});
+landfillEl.addEventListener('focusout', hideMemory);
+
+// ---- start the dump when the section scrolls into view, reset on exit ----
+buildPieces();
+
+function onAboutScroll() {
+  const r = aboutEl.getBoundingClientRect();
+  const covered = Math.min(r.bottom, innerHeight) - Math.max(r.top, 0);
+  const inView = covered > innerHeight * 0.33;
+  if (inView) { reduceMotion ? placeStatic() : startSim(); }
+  else if (!reduceMotion) stopSim();
+}
+mainEl.addEventListener('scroll', onAboutScroll, { passive: true });
+
+// rebuild on resize so the pile fits the new dimensions
+let resizeT;
+addEventListener('resize', () => {
+  clearTimeout(resizeT);
+  resizeT = setTimeout(() => {
+    stopSim();
+    buildPieces();
+    onAboutScroll();
+  }, 200);
+});
+
+onAboutScroll();
+}
+</script>
+</body>
+</html>
